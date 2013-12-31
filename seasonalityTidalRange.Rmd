@@ -1,0 +1,324 @@
+Seasonality of Tidal Range
+======
+```{r setup, message=FALSE, echo=FALSE}
+options(width = 80, prompt = '>> ')
+setwd("/home/user/seasonality-of-tidal-range")  # linux
+opts_chunk$set(out.width=650 , fig.align='center')
+load("seaonalityTidalRangeGetData")
+source("seasonalityTidalRange.R")
+source("seasonalityTidalRange-1.R")
+source("seasonalityTidalRange-3.R")
+```
+
+### Introduction
+
+Theory informs us that tides are complex, influenced by geography of the undersea surface at the measuring station, gravitational forces of the Sun and Moon, and the oceanic basin a station is located in.<sup>[1], [2], [3]</sup> This project will attempt to determine if there is a season in which the *tidal range* for Northern Hemisphere observing stations is greatest. The measure  *tidal range* is defined as *the difference in height between consecutive high and low waters*.<sup>[4]</sup> The questions we will seek to answer: 
+
+1. Is the *tidal range* in the Northern Hemisphere greatest during a solstice or an equinox?<sup>[5]</sup> If so, which one?
+2. If a difference is detecte d, does the season-to-season change fit a linear or non-linear pattern? 
+
+Theory says that the distance of a station from the Equator is just one factor in predicting a tide, and hence the *tidal range*. As a result, we cannot compare stations to each other without selecting a sufficiently large and random set of stations. Such a comparison is beyond the scope of this analysis. Instead, we will aggregate water level observations to form a mean for a group of stations situated in a similar latitude, or region, and analyze the mean across seasons.
+
+We understand that it is not actually seasons that might explain variation in *tidal range* but the degrees of tilt of the Earth's axis. We are using seasons here as a proxy for the degrees of tilt.
+
+### Materials and methods
+
+Our null hypothesis is that the *tidal range* for a region is the same during each of the four seasons. Since we do not have an expectation that *tidal range* does vary from season-to-season, this is the appropriate statement.  We will form a null hypothesis and then test the data. At the end of testing, we will conclude whether or not our data provide evidence to support our null hypothesis.
+
+The statement of our null hypothesis and testing procedure is as follows:
+
+* $latex H_0: \mu_1 = \mu_2 = \mu_3  $
+* $latex H_a: \mu_1 \neq \mu_2 \neq \mu_3 $
+* Fit the data to a linear model and perform a one-way ANOVA to obtain test statistics
+* If significance is determined, proceed to identify the groups that are different and attempt to explain why they are different
+
+The respective values of $latex \mu $ in each test are the *mean of the difference between respective high and low tides for one 29 day period for one region for one season*. The *season* is the factor (categorical predictor value) that we will use in the ANOVA.
+
+An assumption we make is that that water levels for the autumnal equinox and vernal equinox are the same. We will acquire and use data only the vernal equinox.
+
+The remainder of this section discusses our design, data, and how we organized and performed our test.
+
+We will perform secondary data analysis on water level data collected and curated by the National Oceanic and Atmospheric Administration (NOAA).<sup>[6]</sup> Because tide data is well kept, we do not expect variance in our data that is due to collection or curation methodologies. The datum we used is *MLLW* (mean lower low water) and is taken at six-minute intervals.
+
+Data for 14 days before and 14 days after each solstice/equinox will be used. Each of the four data sets will contain 29 days of data for each of the approximately 15 stations. This number of days, 29, is used to approximately match one, complete, 28-day lunar cycle, for each season.
+
+The geodata for each station was converted from degrees, minutes, and seconds (DMS) to decimal using a freely available service<sup>[7]</sup>. Conversion is not complicated and we assume no variance was introduced into our data as a result of errors in the conversion. 
+
+The map figure shows the locations and names of the stations selected for use in our analysis. The meaningful classification is by latitude. No regard is given to longitude; the hemispheric division in the figure is an artifact of the R technique used for coding locations. 
+```{r, echo=FALSE, warning=FALSE, eval=TRUE, include=TRUE, message=FALSE, fig.height=5, fig.width=9, cache=TRUE}
+require(maps)
+require(RColorBrewer)
+require(maptools)
+require(classInt)
+require(mapdata)
+nclr <- 3
+plotvar <- stationData$region
+plotclr <- brewer.pal(nclr, "Set2")
+class <- classIntervals(plotvar, nclr, style = "pretty")
+colcode <- findColours(class, plotclr)
+par(mfrow=c(1,2), 
+	mar=c(0,0,1,0),
+	xaxs = "i", 
+	yaxs = "i", 
+	bty = "n")
+# eastern hemisphere
+# dx <- 1.1^c()
+map("world", 
+	fill = TRUE, 
+	col = "lightgrey", 
+	bor = "lightgrey",
+	xlim = c(90, 175), 
+	ylim = c(0, 80))
+title(main = "Eastern Hemisphere Stations",
+	cex.main = 0.9)
+text(stationData$long, stationData$lat, 
+	stationData$friendlyName,
+	pos = 2,
+	cex = 0.9)
+#
+tempdf <- stationData
+tempdf$region2 <- factor(tempdf$region, levels = c("low", "mid", "high"))
+legend("topleft",
+  legend = levels(tempdf$region2),
+  fill = c(plotclr[1], plotclr[2], plotclr[3]),
+  title = "latitude",
+  box.lwd = 0,
+  box.col = "white",
+  bg = "white")
+#
+map.axes()
+# western hemisphere
+points(stationData$long, stationData$lat, 
+	pch = 16, 
+	col= colcode, 
+	cex = 1.3)
+map("world", 
+	fill = TRUE, 
+	col = "lightgrey", 
+	bor = "lightgrey",
+	xlim = c(-175, -90),
+	ylim = c(0, 80))
+title(main = "Western Hemisphere Stations",
+	cex.main = 0.9)
+points(stationData$long, stationData$lat, 
+	pch = 16, 
+	col= colcode, 
+	cex = 1.3)
+positions = c(4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 2, 4) # from top to bottom
+text(stationData$long, stationData$lat, 
+	stationData$friendlyName,
+	pos = positions,
+	cex = 0.9)
+map.axes()
+title(main = "\nStation Names and Locations",
+	outer = TRUE)
+rm(tempdf, positions)
+```
+Station locations were carefully selected. Where we have personal knowledge of the location, we made judgement on whether or not to include a station. We're we do not have personal experience with the location of a station, we have relied on Google Maps to identify physical features that that might introduce variance to our data. For example, stations near the Columbia Bar, near the entrance to San Francisco Bay, or up a fjord in Alaska, were disregarded as candidate sites. The ideal site has unimpeded ocean water flow. For this reason, the Harvest Oil Platform situated off the coast of Lompoc, CA, is considered ideal. 
+
+Counting a pairing of tides will start with the first low tide in our data for the station. The originally acquired data may not include the same count of high and low tides. We avoided pairings of tides by taking calculating the range as the difference between the mean high water and the mean low water. (See the *Appendix* for acknowledgement of an error in this approach.)
+
+### Results
+
+Let's begin the review of our results by examining the data. The data shown in this table has been aggregated from approximately 105,000 observations. The size of the resulting data set used in the linear models is only 45 records, 15 records per region. This table of descriptive statistics shows the data ordered by region and season:
+```{r, echo=FALSE, warning=FALSE, eval=TRUE, include=TRUE, message=FALSE, results='asis'}
+source("seasonalityTidalRange-4.R")
+suppressPackageStartupMessages(require(googleVis))
+chartVis <- gvisTable(summaryTable2, 'summary2', 
+  options=list(height=350,
+    showRowNumber = TRUE,
+		width = 1000))
+print(chartVis, tag='chart')
+rm(chartVis)
+```
+To aid the reader in gaining some familiarity with the data, the columns can be interactively sorted by mouse clicks on the column header. 
+
+Interesting patterns are revealed when the data are plotted in a boxplot of season by region. We can see quite clearly that in this data set, the median tidal range increases as we move from the a low latitude to a higher latitude. The interquartile range (IQR) of the high latitude tidal range is far wider than the range of either of the other two regions. Very clearly, there is far more variation in the water level readings obtained for the stations in Alaska. We discuss these characteristics of this data set further in our *Discussion* section. 
+```{r echo=FALSE, warning=FALSE, eval=TRUE, include=TRUE, message=FALSE, fig.height=5, fig.width=9}
+#load data, boxplot, summary tables, run your lm() model, summary(), plot(linear-model) to asses and #diagnose residuals, and the last line, anova(mylm)
+e <- summaryTable2
+#levels(e$region)  # to test
+#levels(e$season)  # to test
+e$region2 <- factor(e$region, levels = c("low", "mid", "high"))
+e$season2 <- factor(e$season, levels = c("winter", "spring", "summer"))
+#levels(e$region2)  # to test
+#levels(e$season2)  # to test
+colors = c(rep(plotclr[1], 3), rep(plotclr[2], 3), rep(plotclr[3], 3)) 
+boxplot(tidalRangeMean ~ season2 * region2, 
+  data = e, 
+  col = colors,
+  ylab = "Tidal range (m)",
+  xlab = "Regions with seasons",
+  xaxt = "n",
+  main = "Tidal Range\nSeason * Latitude")
+axis(1, at = 1:9, labels = c("low wtr", "low spr", "low sum", 
+  "mid wtr", "mid spr", "mid sum",
+  "high wtr", "high spr", "high sum"))
+legend("topleft",
+  legend = levels(e$region2),
+  fill = c(plotclr[1], plotclr[2], plotclr[3]),
+  title = "latitude")
+rm(e)
+```
+
+```{r, echo=FALSE, warning=FALSE, eval=FALSE, include=FALSE, message=FALSE, results='asis', fig.height=5, fig.width=9}
+#Here are the summary statistics for each station
+source("seasonalityTidalRange-5.R")
+require(googleVis)
+chartVis <- gvisTable(summaryTable1, 'summary1', 
+	options=list(height=250,
+		width = 220))
+print(chartVis, tag='chart')
+rm(chartVis, dfTemp1, dfTemp2, dfTemp3)
+```
+The summary statistics from our ANOVA are summarized as follows:
+
+* Region *low latitude*: F = 0.1204, with a p-value = 0.89.
+* Region *mid latitude*: F = 0.6631, with a p-value = 0.53.
+* Region *high latitude*: F = 0.0058, with a p-value = 0.99.
+
+```{r, echo=FALSE, warning=FALSE, eval=TRUE, include=FALSE, message=FALSE, cache=TRUE}
+lmLow <- with(subset(summaryTable2, region == "low"), lm(tidalRangeMean ~ season))
+lmMid <- with(subset(summaryTable2, region == "mid"), lm(tidalRangeMean ~ season))
+lmHigh <- with(subset(summaryTable2, region == "high"), lm(tidalRangeMean ~ season))
+summary(lmLow)
+summary(lmMid)
+summary(lmHigh)
+```
+With one exception, the diagnostic plots, residuals against fitted values and qqnorm of residuals, appear to conform with the normality and similar variance across seasons. The exception is the high region that contains data from stations in Alaska. 
+```{r, echo=FALSE, warning=FALSE, eval=FALSE, include=FALSE, message=FALSE}
+par(mfrow=c(2,2))
+plot(lmLow)
+plot(lmMid)
+```
+```{r, echo=FALSE, warning=FALSE, eval=FALSE, include=FALSE, message=FALSE}
+par(mfrow=c(2,2))
+plot(lmHigh)
+```
+It's possible that the non-normal distribution for the high region is explained in part be explained by the stations we selected. The stations include Prudhoe Bay and Nome, AK, sites that are known to have frozen ocean water at the site for several months of the year. We are not educated on the impact sea ice has on the stations being able to record the water level. Further, the three remaining sites for the high region are located along the eastern shore of the Gulf of Alaska, an area known to have a large tidal range.
+```{r, echo=FALSE, warning=FALSE, eval=FALSE, include=FALSE, message=FALSE, cache=TRUE}
+anova(lmLow)
+anova(lmMid)
+anova(lmHigh)
+```
+Summarizing our results, the p-values for each of the three regions are very high, suggesting that it is not very unlikely to obtain the observed tidal ranges given the data available. We therfore <strong>fail to reject</strong> the null hyptohesis and conclude that there is not enough evidence to suggest that there is a relationship between the season and tidal range. 
+
+### Discussion
+
+In looking closely at the number of observations column, ```n```, in the table at the beginning of the *Results* section, we see that there are more high/low tide pairings than naturally occurs for a given period of 29 days. On average, we expect two high tides and two low tides per day for approximatley 58 complete pairings. Instead, for some stations, the number is many more than this. Obviously, the algorithm for building the high and low water levels is not sufficiently accurate. We discuss this in the *Appendix*.
+
+Notwithstanding, the approach is valid and the results are sufficiently lacking any evidence for an effect that we are able to draw our conclusion that there is no effect of season on tidal range. 
+
+The boxplot introduced in the *Results* section above shows an apparent pattern between latitude and tidal range. This pattern is clearly shown here:
+```{r  echo=FALSE, warning=TRUE, eval=TRUE, include=TRUE, fig.height=3.5}
+suppressPackageStartupMessages(require(ggplot2))
+options(scipen=1)
+ggplot(summaryTable1,
+  aes(x = factor(season), y = mean, color = region, group = region)) + 
+  	geom_line() +
+		geom_point(size = 4, shape = 17) +
+		ylab("Mean tidal range (m)") +
+    scale_y_continuous(breaks = round(seq(0, 3.5, by = 0.5), 1)) +
+    theme_bw() +
+    xlab("Season") +
+		theme(axis.title.y=element_text(size = 12)) +
+		ggtitle("Mean Tidal Range by Season") + 
+		scale_colour_brewer(palette = "Set2")
+options(scipen=0)
+```
+
+We've included this figure for two reasons. First, visually inspecting this chart provides further confidence in our result that the season does not explain the variance in tidal range. But, and the primary reason for sharing this chart, is that it appears that there is a pattern of the tidal range increasing as the distance from the Equator increases, i.e., distance from the Equator would explain a significant portion of tidal range. However, we advise against studying this line of reasoning as there is not necessarily a correlation between latitude and tidal range. In the data selected for the high latitude region here, we know that three of the stations have particularly large tidal range compared to the readings obtained at the average station.
+
+An interesting next step in investigating this data is to analyze the distribution of the times between tidal events. We know that natural phenomenon occur according to a distribution that we can undertand and can model. We would like to analyze this data set to see if the distribution of tidal events over time occur according to this distribution.
+
+### Sources and references
+
+1. Laplace theory of tides: http://en.wikipedia.org/wiki/Theory_of_tides
+2. Tidal nodes: http://en.wikipedia.org/wiki/Amphidromic
+3. Discussion of earth tides: http://en.wikipedia.org/wiki/Earth_tide
+4. See *range of tide*, National Oceanic and Atmospheric Association (NOAA) glossary: http://tidesandcurrents.noaa.gov/glossary.html#R
+5. Discussion on tidal datum: http://tidesandcurrents.noaa.gov/publications/tidal_datums_and_their_applications.pdf
+6. Source data, retrieved by station location: http://tidesandcurrents.noaa.gov/
+7. Conversion of DMS to decimal for station locations: http://andrew.hedges.name/experiments/convert_lat_long/
+
+### Appendix
+
+The custom code written for this analsysis is included here. As discussed in *Conclusions*, further work is necessary to control for fluctations in water level near maxima and minima. 
+
+The approach taken in this analysis is to determine the local maxima and minima by comparing the next observation to the current observation. Then skipping twenty, six-minute observations to avoid falsely identifying the next maxima or minima. The readings are at six-minute intervals so these 20 observations are two hours of tidal action. Confirmation of the time between a maxima and minima should be determined to understand what a sufficient number of observations could be bypassed.
+
+A more robust approach to determine if we have actually observed a maxima or minima is to average the current observation once we know the next reading is in the opposite direction, plus next six observations that follow, taking the more extreme of the average or the extreme observation in the set of seven.
+
+Additionally, we did not implement the *tidal range* according to the definition that it is the difference between a consecutive high and low water. Instead, this implementation is the difference between the high water and the *preceding* low water. To correct this error in the algorithm, the tide pairings would have to start with the first high water. This is easy to correct.
+
+<pre><code>
+# Build a vector of high water levels and a vector of low water levels. One value
+# in each vector represents a high or low tide, respectively.
+# Parameters: Vector of water levels.
+# Preconditions: Vector passed in numeric. No validation is performed.
+# Post conditions: None
+# Returns: Index value of low tide.
+buildWaterLevels <- function(waterLevel = waterLevel) {
+	lowWater <- rep(0, 60)
+	highWater <- rep(0, 60)
+	i <- 1  # index for high water
+	j <- 1  # index for low water
+	k <- firstLowTide(head(waterLevel, 500))  # index for water level
+	lowWater[j] <- waterLevel[k]
+	j <- j + 1
+	lookForHighTide <- TRUE  # high tide is TRUE, low tide FALSE
+	moreObs <- TRUE
+	while (moreObs) {
+		if (lookForHighTide) {
+			if (waterLevel[k + 1] >= waterLevel[k]) {
+			k <- k + 20  # hack to move past fluctations that might result in false high/low tide
+				if (k < length(waterLevel) && waterLevel[k + 1] < waterLevel[k]) {
+					highWater[i] <- waterLevel[k]
+					i <- i + 1
+					lookForHighTide <- FALSE
+				}
+			}
+		} else {
+			if (waterLevel[k + 1] <= waterLevel[k]) {
+				k <- k + 20
+				if (k < length(waterLevel) && waterLevel[k + 1] > waterLevel[k]) {
+					lowWater[j] <- waterLevel[k]
+					j <- j + 1
+					lookForHighTide <- TRUE
+				}
+			}
+		}
+		if (k > length(waterLevel)) {
+			moreObs <- FALSE
+		}
+	}
+	if (i > j) {
+		highWater <- highWater[1:j - 1]
+		lowWater <- lowWater[1:j - 1]
+	} else {
+		highWater <- highWater[1:i - 1]
+		lowWater <- lowWater[1:i - 1]
+	}
+	return(list(highWater = highWater, lowWater = lowWater))	
+}
+
+# Identify the first low tide in a set of water level data.
+# Parameters: Vector of water levels.
+# Preconditions: Vector passed in numeric. No validation is performed.
+# Post conditions: None.
+# Returns: Index value of low tide.
+firstLowTide <- function(waterLevel) {
+	k <- 1
+	higher <- TRUE
+	while (higher) {
+		if (waterLevel[k + 1] <= waterLevel[k]) {
+			k <- k + 1
+		} else {
+			higher <- FALSE
+		}
+	}
+	return(k)
+}
+</code></pre>
+
+All the code will eventually be made freely available in a repo on Github under user [sculpturearts](https://github.com/sculpturearts "sculpturearts on Github.com").
