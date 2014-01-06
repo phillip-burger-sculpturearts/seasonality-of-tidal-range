@@ -1,68 +1,122 @@
-# seasonalityTidalRange.R
-#
-# build high and low water
+# File name: seasonalityTidalRange.R
+# Author: Phillip Burger
+# Project: seasonality-of-tidal-range
+# This program: Builds high and low water vecctors used to determine tidal range.
+# Description of the algorithm: We don't know if the first observation is a high
+#   water, low water, on the way up, or on the way down. Definition of tidal
+#   range is a high water minus the follow low water. Locate first high water
+#   then the low water, and so on, until finished. Start by finding the trend. If
+#   down, then skip first low water and find the following high water. If trend
+#   is up, then start filling vector with this high water. At the end, take the 
+#   elements in the shorter of the two vectors.
+
+# Consumes water level data for one, 29-day period. Calcuates high and low 
+#   water using the algorithm described in the file description.  
+# Preconditions: Data for one period. Complete observations. 
+#   Incomplete data removed prior to passing.  
+# Postconditions: none 
+# Parameters: waterLevel - data set contains water level observations.
+# Return: Two element list. First element is high water, second is low water.
 buildWaterLevels <- function(waterLevel = waterLevel) {
-	lowWater <- rep(0, 60)
-	highWater <- rep(0, 60)
+  highWater <- rep(0, 60)
+  lowWater <- rep(0, 60)
 	i <- 1  # index for high water
 	j <- 1  # index for low water
-	# get first low tide
-	k <- firstLowTide(head(waterLevel, 500))
-	lowWater[j] <- waterLevel[k]
-	j <- j + 1
-	lookForHighTide <- TRUE  # high tide is TRUE, low tide FALSE
+	k <- firstHighWater(head(waterLevel, 250))  # get first high water
+	highWater[i] <- waterLevel[k]
+	i <- i + 1
+	lookForHighWater <- FALSE  # find high tide if TRUE, find low tide if FALSE
 	# traverse readings between ebb and flow, build tide levels at flood and ebb
 	moreObs <- TRUE
 	while (moreObs) {
 		# look for next high tide, build high water.
-		if (lookForHighTide) {
-			if (waterLevel[k + 1] >= waterLevel[k]) {
-			k <- k + 20  # to move past fluctations that might result in false high/low tide
-			# add high water level, set lookForTide <- FALSE
-				if (k < length(waterLevel) && waterLevel[k + 1] < waterLevel[k]) {
-					highWater[i] <- waterLevel[k]
-					i <- i + 1
-					#print(paste0("  high: ", waterLevel[k]))
-					lookForHighTide <- FALSE
-				}
-			}
+		if (lookForHighWater) {
+		  k <- k + 25  # skip near water to avoid false maxima
+		  k <- k + tryCatch(getHighWater(waterLevel[k:length(waterLevel)]),
+        error = function(err) {
+          moreObs <- FALSE
+        },
+        finally = {})  # catch array out of bounds error
+      highWater[i] <- waterLevel[k]
+      i <- i + 1
+		  lookForHighWater <- FALSE
 		} else {
-			if (waterLevel[k + 1] <= waterLevel[k]) {
-				k <- k + 20
-				# add high water level, set lookForTide <- FALSE
-				if (k < length(waterLevel) && waterLevel[k + 1] > waterLevel[k]) {
-					lowWater[j] <- waterLevel[k]
-					j <- j + 1
-					#print(paste0("low: ", waterLevel[k]))
-					lookForHighTide <- TRUE
-				}
-			}
+  		  k <- k + 25  # skip near water to avoid false minima
+        k <- k + tryCatch(getLowWater(waterLevel[k:length(waterLevel)]),
+          error = function(err) {
+            moreObs <- FALSE
+          },
+          finally = {})  # catch array out of bounds error
+        lowWater[j] <- waterLevel[k]
+        j <- j + 1
+        lookForHighWater <- TRUE  		  
 		}
-		if (k > length(waterLevel)) {
+    if (k + 25 > length(waterLevel)) {
 			moreObs <- FALSE
 		}
 	}
-	if (i > j) {
-		highWater <- highWater[1:j - 1]
-		lowWater <- lowWater[1:j - 1]
+  # number of elements with content be same length or highWater 1 longer
+  if (i > j) {
+    j <- j - 1
+    highWater <- highWater[1:j]
+    lowWater <- lowWater[1:j]
 	} else {
-		highWater <- highWater[1:i - 1]
-		lowWater <- lowWater[1:i - 1]
+    i <- i - 1
+	  highWater <- highWater[1:i]
+	  lowWater <- lowWater[1:i]     
 	}
 	return(list(highWater = highWater, lowWater = lowWater))	
 }
 
-# get first low tide
-# Preconditions: water level is a numeric vector
-firstLowTide <- function(waterLevel) {
+# Helper function, find the first high tide for the observed period. This
+#   function is called just one time. 
+# Preconditions: 500 observations are passed in
+# Postconditions: none.
+# Parameters: waterLevel-data set containing first observations for the period.
+# Return: Two element list. First element is high water, second is low water.
+firstHighWater <- function(waterLevel) {
 	k <- 1
-	higher <- TRUE
-	while (higher) {
-		if (waterLevel[k + 1] <= waterLevel[k]) {
-			k <- k + 1
-		} else {
-			higher <- FALSE
-		}
-	}
+	# simplest case, data starts with level increasing
+  if (waterLevel[k] < mean(waterLevel[(k+1):(k+6)])) {
+    k <- getHighWater(waterLevel)
+  # less simple, data starts with level decreasing 
+  } else {
+    k <- getLowWater(waterLevel)  # identity the first minima
+    k <- k + getHighWater(waterLevel[(k+1):length(waterLevel)])  # then identify fresh maxima, not dirty one if data starts with tredning down.
+  }
 	return(k)
+}
+
+# Helper function, find the first high water level in the vector
+# Parameters: waterLevel-data set containing first observations for the period.
+# Return: Index location in waterLevel marking the local maxima
+getHighWater <- function(waterLevel = waterLevel) {
+  k <- 1
+  trendingHigher <- TRUE
+  while (trendingHigher) {
+    if (waterLevel[k] < mean(waterLevel[(k+1):(k+7)])) {
+      k <- k + 1
+    } else {
+      k <- (k - 1) + which.max(waterLevel[k:(k+8)])
+      trendingHigher <- FALSE  # found high tide, return k
+    }
+  }
+  return(k)
+}
+
+# Helper function, find the first low water level in the vector
+# Parameters: waterLevel-data set containing first observations for the period.
+# Return: Index location in waterLevel marking the first local minima
+getLowWater <- function(waterLevel) {
+  k <- 1
+  trendingLower <- TRUE
+  while (trendingLower) {
+    if (waterLevel[k] > mean(waterLevel[(k+1):(k+7)])) {
+      k <- k + 1
+    } else {
+      k <- (k - 1) + which.min(waterLevel[k:(k+8)])
+      trendingLower <- FALSE  # found low tide, return k
+    }
+  }
+  return(k)
 }
