@@ -1,4 +1,14 @@
-regions <- c(rep("low", 15), rep("mid", 15), rep("high", 15))
+# File name: seasonalityTidalRange-4.R
+# Date: November 2013
+# Author: Phillip Burger
+# Project: seasonality-of-tidal-range
+# This program: Builds table data displayed in the gVis table
+# 
+# Water levels for Nome (9468756) and Prudhoe Bay (9497645) appear irregular 
+# when plotted. Data for these two stations was removed. The source of the 
+# irregularity may be sea ice.  
+
+regions <- c(rep("low", 15), rep("mid", 15), rep("high", 9))
 names <- c(rep(c("Nawiliwili, HI", 
 	"Hilo Bay, HI",
 	"Pago Bay, Guam",
@@ -13,9 +23,7 @@ names <- c(rep(c("Nawiliwili, HI",
 	
 	rep(c("Ketchikan, AK",	
 	"Sitka, AK",
-	"Yakutat Bay, AK",
-	"Nome, AK",
-	"Prudhoe Bay, AK"), 3))
+	"Yakutat Bay, AK"), 3))
 stationID <- c(rep(c(1611400, 
 	1617760,
 	1631428,
@@ -30,9 +38,7 @@ stationID <- c(rep(c(1611400,
 	
 	rep(c(9450460,
 	9451600,
-	9453220,
-	9468756,
-	9497645), 3))
+	9453220), 3))
 
 nHighWater <- c(length(low1611400WtrData$highWater),
   length(low1617760WtrData$highWater),
@@ -73,20 +79,14 @@ nHighWater <- c(length(low1611400WtrData$highWater),
   length(high9450460WtrData$highWater),
   length(high9451600WtrData$highWater),
   length(high9453220WtrData$highWater),
-  length(high9468756WtrData$highWater),
-  length(high9497645WtrData$highWater),
   
   length(high9450460SprData$highWater),
   length(high9451600SprData$highWater),
   length(high9453220SprData$highWater),
-  length(high9468756SprData$highWater),
-  length(high9497645SprData$highWater),
   
   length(high9450460SumData$highWater),
   length(high9451600SumData$highWater),
-  length(high9453220SumData$highWater),
-  length(high9468756SumData$highWater),
-  length(high9497645SumData$highWater))
+  length(high9453220SumData$highWater))
 
 nLowWater <- c(length(low1611400WtrData$lowWater),
   length(low1617760WtrData$lowWater),
@@ -127,21 +127,14 @@ nLowWater <- c(length(low1611400WtrData$lowWater),
   length(high9450460WtrData$lowWater),
   length(high9451600WtrData$lowWater),
   length(high9453220WtrData$lowWater),
-  length(high9468756WtrData$lowWater),
-  length(high9497645WtrData$lowWater),
   
   length(high9450460SprData$lowWater),
   length(high9451600SprData$lowWater),
   length(high9453220SprData$lowWater),
-  length(high9468756SprData$lowWater),
-  length(high9497645SprData$lowWater),
   
   length(high9450460SumData$lowWater),
   length(high9451600SumData$lowWater),
-  length(high9453220SumData$lowWater),
-  length(high9468756SumData$lowWater),
-  length(high9497645SumData$lowWater))
-  
+  length(high9453220SumData$lowWater))
   
 nLowWater <- c(length(low1611400WtrData$lowWater),
   length(low1617760WtrData$lowWater),
@@ -182,20 +175,14 @@ nLowWater <- c(length(low1611400WtrData$lowWater),
   length(high9450460WtrData$lowWater),
   length(high9451600WtrData$lowWater),
   length(high9453220WtrData$lowWater),
-  length(high9468756WtrData$lowWater),
-  length(high9497645WtrData$lowWater),
   
   length(high9450460SprData$lowWater),
   length(high9451600SprData$lowWater),
   length(high9453220SprData$lowWater),
-  length(high9468756SprData$lowWater),
-  length(high9497645SprData$lowWater),
   
   length(high9450460SumData$lowWater),
   length(high9451600SumData$lowWater),
-  length(high9453220SumData$lowWater),
-  length(high9468756SumData$lowWater),
-  length(high9497645SumData$lowWater))
+  length(high9453220SumData$lowWater))
 
 tidalRangeMean <- c(mean(low1611400WtrData$highWater - low1611400WtrData$lowWater),
   mean(low1617760WtrData$highWater - low1617760WtrData$lowWater),
@@ -236,21 +223,14 @@ tidalRangeMean <- c(mean(low1611400WtrData$highWater - low1611400WtrData$lowWate
   mean(high9450460WtrData$highWater - high9450460WtrData$lowWater),
   mean(high9451600WtrData$highWater - high9451600WtrData$lowWater),
   mean(high9453220WtrData$highWater - high9453220WtrData$lowWater),
-  mean(high9468756WtrData$highWater - high9468756WtrData$lowWater),
-  mean(high9497645WtrData$highWater - high9497645WtrData$lowWater),
   
   mean(high9450460SprData$highWater - high9450460SprData$lowWater),
   mean(high9451600SprData$highWater - high9451600SprData$lowWater),
   mean(high9453220SprData$highWater - high9453220SprData$lowWater),
-  mean(high9468756SprData$highWater - high9468756SprData$lowWater),
-  mean(high9497645SprData$highWater - high9497645SprData$lowWater),
   
   mean(high9450460SumData$highWater - high9450460SumData$lowWater),
   mean(high9451600SumData$highWater - high9451600SumData$lowWater),
-  mean(high9453220SumData$highWater - high9453220SumData$lowWater),
-  mean(high9468756SumData$highWater - high9468756SumData$lowWater),
-  mean(high9497645SumData$highWater - high9497645SumData$lowWater))
-  
+  mean(high9453220SumData$highWater - high9453220SumData$lowWater))
   
 tidalRangeSD <- c(sd(low1611400WtrData$highWater - low1611400WtrData$lowWater),
   sd(low1617760WtrData$highWater - low1617760WtrData$lowWater),
@@ -291,27 +271,21 @@ tidalRangeSD <- c(sd(low1611400WtrData$highWater - low1611400WtrData$lowWater),
   sd(high9450460WtrData$highWater - high9450460WtrData$lowWater),
   sd(high9451600WtrData$highWater - high9451600WtrData$lowWater),
   sd(high9453220WtrData$highWater - high9453220WtrData$lowWater),
-  sd(high9468756WtrData$highWater - high9468756WtrData$lowWater),
-  sd(high9497645WtrData$highWater - high9497645WtrData$lowWater),
   
   sd(high9450460SprData$highWater - high9450460SprData$lowWater),
   sd(high9451600SprData$highWater - high9451600SprData$lowWater),
   sd(high9453220SprData$highWater - high9453220SprData$lowWater),
-  sd(high9468756SprData$highWater - high9468756SprData$lowWater),
-  sd(high9497645SprData$highWater - high9497645SprData$lowWater),
   
   sd(high9450460SumData$highWater - high9450460SumData$lowWater),
   sd(high9451600SumData$highWater - high9451600SumData$lowWater),
-  sd(high9453220SumData$highWater - high9453220SumData$lowWater),
-  sd(high9468756SumData$highWater - high9468756SumData$lowWater),
-  sd(high9497645SumData$highWater - high9497645SumData$lowWater))
+  sd(high9453220SumData$highWater - high9453220SumData$lowWater))
 
 summaryTable2 <- data.frame(region = regions,
 	stationID = stationID,
 	stationName = names,
 	season = c(rep("winter", 5), rep("spring", 5), rep("summer", 5),
 		rep("winter", 5), rep("spring", 5), rep("summer", 5),
-		rep("winter", 5), rep("spring", 5), rep("summer", 5)),
+		rep("winter", 3), rep("spring", 3), rep("summer", 3)),
   n = nHighWater,
 	highWaterMean = c(mean(low1611400WtrData$highWater),
 		mean(low1617760WtrData$highWater),
@@ -352,20 +326,14 @@ summaryTable2 <- data.frame(region = regions,
 		mean(high9450460WtrData$highWater),
 		mean(high9451600WtrData$highWater),
 		mean(high9453220WtrData$highWater),
-		mean(high9468756WtrData$highWater),
-		mean(high9497645WtrData$highWater),
 	
 		mean(high9450460SprData$highWater),
 		mean(high9451600SprData$highWater),
 		mean(high9453220SprData$highWater),
-		mean(high9468756SprData$highWater),
-		mean(high9497645SprData$highWater),
 	
 		mean(high9450460SumData$highWater),
 		mean(high9451600SumData$highWater),
-		mean(high9453220SumData$highWater),
-		mean(high9468756SumData$highWater),
-		mean(high9497645SumData$highWater)),
+		mean(high9453220SumData$highWater)),
 	
 	highWaterSD = c(sd(low1611400WtrData$highWater),
 		sd(low1617760WtrData$highWater),
@@ -406,20 +374,14 @@ summaryTable2 <- data.frame(region = regions,
 		sd(high9450460WtrData$highWater),
 		sd(high9451600WtrData$highWater),
 		sd(high9453220WtrData$highWater),
-		sd(high9468756WtrData$highWater),
-		sd(high9497645WtrData$highWater),
 		
 		sd(high9450460SprData$highWater),
 		sd(high9451600SprData$highWater),
 		sd(high9453220SprData$highWater),
-		sd(high9468756SprData$highWater),
-		sd(high9497645SprData$highWater),
 		
 		sd(high9450460SumData$highWater),
 		sd(high9451600SumData$highWater),
-		sd(high9453220SumData$highWater),
-		sd(high9468756SumData$highWater),
-		sd(high9497645SumData$highWater)),
+		sd(high9453220SumData$highWater)),
 	lowWaterMean = c(mean(low1611400WtrData$lowWater),
 		mean(low1617760WtrData$lowWater),
 		mean(low1631428WtrData$lowWater),
@@ -459,21 +421,14 @@ summaryTable2 <- data.frame(region = regions,
 		mean(high9450460WtrData$lowWater),
 		mean(high9451600WtrData$lowWater),
 		mean(high9453220WtrData$lowWater),
-		mean(high9468756WtrData$lowWater),
-		mean(high9497645WtrData$lowWater),
 		
 		mean(high9450460SprData$lowWater),
 		mean(high9451600SprData$lowWater),
 		mean(high9453220SprData$lowWater),
-		mean(high9468756SprData$lowWater),
-		mean(high9497645SprData$lowWater),
 		
 		mean(high9450460SumData$lowWater),
 		mean(high9451600SumData$lowWater),
-		mean(high9453220SumData$lowWater),
-		mean(high9468756SumData$lowWater),
-		mean(high9497645SumData$lowWater)),
-	
+		mean(high9453220SumData$lowWater)),
 	
 	lowWaterSD = c(sd(low1611400WtrData$lowWater),
 		sd(low1617760WtrData$lowWater),
@@ -514,20 +469,14 @@ summaryTable2 <- data.frame(region = regions,
 		sd(high9450460WtrData$lowWater),
 		sd(high9451600WtrData$lowWater),
 		sd(high9453220WtrData$lowWater),
-		sd(high9468756WtrData$lowWater),
-		sd(high9497645WtrData$lowWater),
 		
 		sd(high9450460SprData$lowWater),
 		sd(high9451600SprData$lowWater),
 		sd(high9453220SprData$lowWater),
-		sd(high9468756SprData$lowWater),
-		sd(high9497645SprData$lowWater),
 		
 		sd(high9450460SumData$lowWater),
 		sd(high9451600SumData$lowWater),
-		sd(high9453220SumData$lowWater),
-		sd(high9468756SumData$lowWater),
-		sd(high9497645SumData$lowWater)),
+		sd(high9453220SumData$lowWater)),
                             
     tidalRangeMean = tidalRangeMean,
     tidalRangeSD = tidalRangeSD)

@@ -1,5 +1,6 @@
 # File name: seasonalityTidalRange.R
 # Author: Phillip Burger
+# Date: November 2013
 # Project: seasonality-of-tidal-range
 # This program: Builds high and low water vecctors used to determine tidal range.
 # Description of the algorithm: We don't know if the first observation is a high
@@ -17,7 +18,12 @@
 # Postconditions: none 
 # Parameters: waterLevel - data set contains water level observations.
 # Return: Two element list. First element is high water, second is low water.
-buildWaterLevels <- function(waterLevel = waterLevel) {
+
+# Declare local variables. These are parameters used in identifying high and 
+# low water.
+skipNear <- 30
+sampleNearMinMax <- 15
+buildWaterLevels <- function(waterLevel) {
   highWater <- rep(0, 60)
   lowWater <- rep(0, 60)
 	i <- 1  # index for high water
@@ -31,7 +37,7 @@ buildWaterLevels <- function(waterLevel = waterLevel) {
 	while (moreObs) {
 		# look for next high tide, build high water.
 		if (lookForHighWater) {
-		  k <- k + 25  # skip near water to avoid false maxima
+		  k <- k + skipNear  # skip near water to avoid false maxima
 		  k <- k + tryCatch(getHighWater(waterLevel[k:length(waterLevel)]),
         error = function(err) {
           moreObs <- FALSE
@@ -41,7 +47,7 @@ buildWaterLevels <- function(waterLevel = waterLevel) {
       i <- i + 1
 		  lookForHighWater <- FALSE
 		} else {
-  		  k <- k + 25  # skip near water to avoid false minima
+  		  k <- k + skipNear  # skip near water to avoid false minima
         k <- k + tryCatch(getLowWater(waterLevel[k:length(waterLevel)]),
           error = function(err) {
             moreObs <- FALSE
@@ -51,7 +57,7 @@ buildWaterLevels <- function(waterLevel = waterLevel) {
         j <- j + 1
         lookForHighWater <- TRUE  		  
 		}
-    if (k + 25 > length(waterLevel)) {
+    if (k + skipNear > length(waterLevel)) {
 			moreObs <- FALSE
 		}
 	}
@@ -77,7 +83,7 @@ buildWaterLevels <- function(waterLevel = waterLevel) {
 firstHighWater <- function(waterLevel) {
 	k <- 1
 	# simplest case, data starts with level increasing
-  if (waterLevel[k] < mean(waterLevel[(k+1):(k+6)])) {
+  if (waterLevel[k] < mean(waterLevel[(k+1):(k+sampleNearMinMax)])) {
     k <- getHighWater(waterLevel)
   # less simple, data starts with level decreasing 
   } else {
@@ -90,15 +96,15 @@ firstHighWater <- function(waterLevel) {
 # Helper function, find the first high water level in the vector
 # Parameters: waterLevel-data set containing first observations for the period.
 # Return: Index location in waterLevel marking the local maxima
-getHighWater <- function(waterLevel = waterLevel) {
+getHighWater <- function(waterLevel) {
   k <- 1
   trendingHigher <- TRUE
   while (trendingHigher) {
-    if (waterLevel[k] < mean(waterLevel[(k+1):(k+7)])) {
+    if (waterLevel[k] < mean(waterLevel[(k+1):(k+sampleNearMinMax)])) {
       k <- k + 1
     } else {
-      k <- (k - 1) + which.max(waterLevel[k:(k+8)])
-      trendingHigher <- FALSE  # found high tide, return k
+      k <- (k - 1) + which.max(waterLevel[k:(k+1+sampleNearMinMax)])
+      trendingHigher <- FALSE  # found high water, return k
     }
   }
   return(k)
@@ -111,11 +117,11 @@ getLowWater <- function(waterLevel) {
   k <- 1
   trendingLower <- TRUE
   while (trendingLower) {
-    if (waterLevel[k] > mean(waterLevel[(k+1):(k+7)])) {
+    if (waterLevel[k] > mean(waterLevel[(k+1):(k+sampleNearMinMax)])) {
       k <- k + 1
     } else {
-      k <- (k - 1) + which.min(waterLevel[k:(k+8)])
-      trendingLower <- FALSE  # found low tide, return k
+      k <- (k - 1) + which.min(waterLevel[k:(k+1+sampleNearMinMax)])
+      trendingLower <- FALSE  # found low water, return k
     }
   }
   return(k)
